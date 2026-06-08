@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="照合アプリ">
+<title>照合アプリ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3e;
+    --accent: #4f8ef7;
+    --text: #e8eaf0;
+    --text-sub: #8b8fa8;
+    --ok: #22c55e;
+    --ng: #ef4444;
+    --warn: #f59e0b;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    overflow: hidden;
+  }
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top, 12px) 16px env(safe-area-inset-bottom, 16px);
+  }
+
+  /* ヘッダー */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 16px;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+  .header .step-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ステップインジケーター */
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+  .step-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text-sub);
+    transition: all 0.3s;
+  }
+  .step-circle.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+  .step-circle.done {
+    border-color: var(--ok);
+    background: var(--ok);
+    color: #fff;
+  }
+  .step-label {
+    font-size: 10px;
+    color: var(--text-sub);
+    text-align: center;
+    line-height: 1.3;
+  }
+  .step-label.active { color: var(--accent); font-weight: 700; }
+  .step-label.done { color: var(--ok); }
+  .step-line {
+    flex: 0.3;
+    height: 2px;
+    background: var(--border);
+    margin-bottom: 20px;
+    transition: background 0.3s;
+  }
+  .step-line.done { background: var(--ok); }
+
+  /* メインカード */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .card-sub {
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  /* スキャナ */
+  #qr-reader, #bar-reader {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    flex-shrink: 0;
+  }
+  #qr-reader video, #bar-reader video {
+    border-radius: 12px;
+  }
+
+  /* 取得済み表示 */
+  .scanned-value {
+    background: rgba(79, 142, 247, 0.1);
+    border: 1px solid rgba(79, 142, 247, 0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    flex-shrink: 0;
+  }
+  .scanned-value .label {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .scanned-value .value {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    color: var(--text);
+    word-break: break-all;
+  }
+
+  /* ボタン */
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.04em;
+    margin-top: 12px;
+    flex-shrink: 0;
+  }
+  .btn:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--border); color: var(--text); }
+  .btn-danger { background: var(--ng); color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* 結果画面 */
+  #result-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    animation: fadeIn 0.25s ease;
+  }
+  #result-screen.ok { background: #052e16; }
+  #result-screen.ng { background: #2d0707; }
+  #result-screen.show { display: flex; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+  .result-icon {
+    font-size: 80px;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .result-label {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .result-label.ok { color: var(--ok); }
+  .result-label.ng { color: var(--ng); }
+  .result-detail {
+    background: rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 32px;
+  }
+  .result-detail .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    gap: 12px;
+  }
+  .result-detail .row:last-child { border-bottom: none; }
+  .result-detail .row .lbl { font-size: 11px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
+  .result-detail .row .val { font-size: 13px; font-weight: 700; font-family: monospace; color: #fff; word-break: break-all; text-align: right; }
+
+  .btn-reset {
+    width: 100%;
+    max-width: 400px;
+    padding: 18px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.25);
+    background: transparent;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .btn-reset:active { background: rgba(255,255,255,0.1); }
+
+  /* ローディング */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,17,23,0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text-sub); font-size: 14px; }
+
+  /* 手入力モーダル */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 300;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 env(safe-area-inset-bottom, 0);
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 32px;
+    width: 100%;
+    max-width: 600px;
+  }
+  .modal-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .modal-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 18px;
+    color: var(--text);
+    font-family: monospace;
+    outline: none;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns .btn { margin-top: 0; flex: 1; }
+
+  /* メッセージ */
+  .msg {
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 10px;
+    flex-shrink: 0;
+  }
+  .msg.warn { background: rgba(245,158,11,0.15); color: var(--warn); border: 1px solid rgba(245,158,11,0.3); }
+  .msg.info { background: rgba(79,142,247,0.1); color: var(--accent); border: 1px solid rgba(79,142,247,0.2); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <h1>📦 照合アプリ</h1>
+    <div class="step-badge" id="step-badge">STEP 1 / 2</div>
+  </div>
+
+  <!-- ステップインジケーター -->
+  <div class="steps">
+    <div class="step-item">
+      <div class="step-circle active" id="sc1">1</div>
+      <div class="step-label active" id="sl1">送り状<br>バーコード</div>
+    </div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc2">2</div>
+      <div class="step-label" id="sl2">荷物<br>QRコード</div>
+    </div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc3">✓</div>
+      <div class="step-label" id="sl3">照合<br>結果</div>
+    </div>
+  </div>
+
+  <!-- STEP 1：バーコード（問番） -->
+  <div class="card" id="step1-card">
+    <div class="card-title">STEP 1：送り状バーコードをスキャン</div>
+    <div class="card-sub">送り状に印刷されたバーコードにカメラを向けてください</div>
+    <div id="bar-reader"></div>
+    <div id="mondban-display" style="display:none" class="scanned-value">
+      <div class="label">取得した問番</div>
+      <div class="value" id="mondban-val">—</div>
+    </div>
+    <button class="btn btn-secondary" onclick="openManualInput('mondban')" style="margin-top:10px">⌨️ 手入力する</button>
+    <button class="btn btn-primary" id="step1-next" onclick="goStep2()" disabled>次へ →　QRコードをスキャン</button>
+  </div>
+
+  <!-- STEP 2：QRコード（受注番号） -->
+  <div class="card" id="step2-card" style="display:none">
+    <div class="card-title">STEP 2：荷物のQRコードをスキャン</div>
+    <div class="card-sub">荷物に貼付されたQRコードにカメラを向けてください</div>
+    <div id="qr-reader"></div>
+    <div id="juchu-display" style="display:none" class="scanned-value">
+      <div class="label">取得した受注番号</div>
+      <div class="value" id="juchu-val">—</div>
+    </div>
+    <button class="btn btn-secondary" onclick="openManualInput('juchu')" style="margin-top:10px">⌨️ 手入力する</button>
+    <button class="btn btn-primary" id="step2-check" onclick="doCheck()" disabled>照合する</button>
+    <button class="btn btn-secondary" onclick="goStep1()" style="margin-top:6px">← 戻る</button>
+  </div>
+</div>
+
+<!-- 結果画面 -->
+<div id="result-screen">
+  <div class="result-icon" id="result-icon">✅</div>
+  <div class="result-label" id="result-label">OK</div>
+  <div class="result-detail">
+    <div class="row"><span class="lbl">スキャン問番</span><span class="val" id="r-scan-mondban">—</span></div>
+    <div class="row"><span class="lbl">登録問番</span><span class="val" id="r-reg-mondban">—</span></div>
+    <div class="row"><span class="lbl">受注番号</span><span class="val" id="r-juchu">—</span></div>
+  </div>
+  <button class="btn-reset" onclick="resetAll()">🔄 次の照合へ</button>
+</div>
+
+<!-- ローディング -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">照合中…</div>
+</div>
+
+<!-- 手入力モーダル -->
+<div class="modal-overlay" id="manual-modal">
+  <div class="modal-box">
+    <h3 id="modal-title">手入力</h3>
+    <input type="text" class="modal-input" id="manual-input" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeManualInput()">キャンセル</button>
+      <button class="btn btn-primary" onclick="confirmManualInput()">確定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ★ここにGASのウェブアプリURLを貼り付けてください★
+const GAS_URL = 'YOUR_GAS_URL_HERE';
+// ============================================================
+
+let mondban = '';   // 問番（送り状バーコードから）
+let juchuBan = '';  // 受注番号（QRコードから）
+let manualTarget = ''; // 手入力対象
+let qrScanner = null;
+let barScanner = null;
+let audioCtx = null;
+
+// AudioContext初期化（iOS対応：ユーザー操作後に初期化）
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playNG() {
+  initAudio();
+  // 3回ビープ
+  [0, 0.35, 0.7].forEach(offset => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 440;
+    osc.type = 'square';
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime + offset);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + offset + 0.25);
+    osc.start(audioCtx.currentTime + offset);
+    osc.stop(audioCtx.currentTime + offset + 0.3);
+  });
+}
+
+function playOK() {
+  initAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value = 880;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.5);
+}
+
+// STEP1：バーコードスキャン開始
+function startBarScanner() {
+  if (barScanner) return;
+  barScanner = new Html5Qrcode('bar-reader');
+  barScanner.start(
+    { facingMode: 'environment' },
+    { fps: 15, qrbox: { width: 280, height: 100 }, aspectRatio: 2.5 },
+    (decodedText) => {
+      initAudio();
+      const val = decodedText.trim();
+      setMondban(val);
+    },
+    () => {}
+  ).catch(err => {
+    console.warn('バーコードスキャナ起動失敗:', err);
+    showMsg('step1-card', 'カメラの起動に失敗しました。手入力をご利用ください。', 'warn');
+  });
+}
+
+// STEP2：QRスキャン開始
+function startQRScanner() {
+  if (qrScanner) return;
+  qrScanner = new Html5Qrcode('qr-reader');
+  qrScanner.start(
+    { facingMode: 'environment' },
+    { fps: 15, qrbox: { width: 240, height: 240 } },
+    (decodedText) => {
+      initAudio();
+      // QRからスペース前の第1フィールドを受注番号として取得
+      const parts = decodedText.trim().split(/\s+/);
+      const val = parts[0].replace(/^"/, '').trim(); // 先頭の「"」を除去
+      setJuchu(val);
+    },
+    () => {}
+  ).catch(err => {
+    console.warn('QRスキャナ起動失敗:', err);
+    showMsg('step2-card', 'カメラの起動に失敗しました。手入力をご利用ください。', 'warn');
+  });
+}
+
+function setMondban(val) {
+  mondban = val;
+  document.getElementById('mondban-val').textContent = val;
+  document.getElementById('mondban-display').style.display = 'block';
+  document.getElementById('step1-next').disabled = false;
+  stopScanner('bar');
+}
+
+function setJuchu(val) {
+  juchuBan = val;
+  document.getElementById('juchu-val').textContent = val;
+  document.getElementById('juchu-display').style.display = 'block';
+  document.getElementById('step2-check').disabled = false;
+  stopScanner('qr');
+}
+
+async function stopScanner(type) {
+  try {
+    if (type === 'qr' && qrScanner) {
+      await qrScanner.stop();
+      qrScanner = null;
+    }
+    if (type === 'bar' && barScanner) {
+      await barScanner.stop();
+      barScanner = null;
+    }
+  } catch(e) {}
+}
+
+function goStep2() {
+  initAudio();
+  document.getElementById('step1-card').style.display = 'none';
+  document.getElementById('step2-card').style.display = 'flex';
+  document.getElementById('step2-card').style.flexDirection = 'column';
+
+  // ステップインジケーター更新
+  document.getElementById('sc1').className = 'step-circle done';
+  document.getElementById('sl1').className = 'step-label done';
+  document.getElementById('line1').className = 'step-line done';
+  document.getElementById('sc2').className = 'step-circle active';
+  document.getElementById('sl2').className = 'step-label active';
+  document.getElementById('step-badge').textContent = 'STEP 2 / 2';
+
+  startQRScanner();
+}
+
+function goStep1() {
+  stopScanner('qr');
+  juchuBan = '';
+  document.getElementById('juchu-display').style.display = 'none';
+  document.getElementById('step2-check').disabled = true;
+  document.getElementById('step2-card').style.display = 'none';
+  document.getElementById('step1-card').style.display = 'flex';
+  document.getElementById('step1-card').style.flexDirection = 'column';
+
+  document.getElementById('sc1').className = 'step-circle active';
+  document.getElementById('sl1').className = 'step-label active';
+  document.getElementById('line1').className = 'step-line';
+  document.getElementById('sc2').className = 'step-circle';
+  document.getElementById('sl2').className = 'step-label';
+  document.getElementById('step-badge').textContent = 'STEP 1 / 2';
+
+  startBarScanner();
+}
+
+// 照合実行
+async function doCheck() {
+  initAudio();
+  if (!mondban || !juchuBan) return;
+
+  document.getElementById('loading').classList.add('show');
+
+  try {
+    const url = `${GAS_URL}?juchu=${encodeURIComponent(juchuBan)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    document.getElementById('loading').classList.remove('show');
+
+    if (data.status === 'found') {
+      const regMondban = data.mondban.trim();
+      const scanMondban = mondban.trim();
+      const isOK = (regMondban === scanMondban);
+      showResult(isOK, scanMondban, regMondban, juchuBan);
+    } else if (data.status === 'notfound') {
+      showResult(false, mondban, '（未登録）', juchuBan);
+    } else {
+      document.getElementById('loading').classList.remove('show');
+      showMsg('step2-card', `エラー: ${data.message}`, 'warn');
+    }
+  } catch(err) {
+    document.getElementById('loading').classList.remove('show');
+    showMsg('step2-card', 'スプレッドシートへの接続に失敗しました。URLを確認してください。', 'warn');
+  }
+}
+
+function showResult(isOK, scanMondban, regMondban, juchu) {
+  const screen = document.getElementById('result-screen');
+  screen.className = `result-screen show ${isOK ? 'ok' : 'ng'}`;
+
+  document.getElementById('result-icon').textContent = isOK ? '✅' : '❌';
+  document.getElementById('result-label').textContent = isOK ? 'OK' : 'NG';
+  document.getElementById('result-label').className = `result-label ${isOK ? 'ok' : 'ng'}`;
+  document.getElementById('r-scan-mondban').textContent = scanMondban;
+  document.getElementById('r-reg-mondban').textContent = regMondban;
+  document.getElementById('r-juchu').textContent = juchu;
+
+  if (isOK) {
+    playOK();
+  } else {
+    playNG();
+  }
+
+  // ステップ3をdoneに
+  document.getElementById('sc2').className = 'step-circle done';
+  document.getElementById('sl2').className = 'step-label done';
+  document.getElementById('line2').className = 'step-line done';
+  document.getElementById('sc3').className = 'step-circle done';
+  document.getElementById('sl3').className = 'step-label done';
+}
+
+function resetAll() {
+  mondban = '';
+  juchuBan = '';
+
+  // 表示リセット
+  document.getElementById('result-screen').className = 'result-screen';
+  document.getElementById('mondban-display').style.display = 'none';
+  document.getElementById('juchu-display').style.display = 'none';
+  document.getElementById('step1-next').disabled = true;
+  document.getElementById('step2-check').disabled = true;
+
+  // STEP2非表示、STEP1表示
+  document.getElementById('step2-card').style.display = 'none';
+  document.getElementById('step1-card').style.display = 'flex';
+  document.getElementById('step1-card').style.flexDirection = 'column';
+
+  // ステップインジケーターリセット
+  document.getElementById('sc1').className = 'step-circle active';
+  document.getElementById('sl1').className = 'step-label active';
+  document.getElementById('sc2').className = 'step-circle';
+  document.getElementById('sl2').className = 'step-label';
+  document.getElementById('sc3').className = 'step-circle';
+  document.getElementById('sl3').className = 'step-label';
+  document.getElementById('line1').className = 'step-line';
+  document.getElementById('line2').className = 'step-line';
+  document.getElementById('step-badge').textContent = 'STEP 1 / 2';
+
+  stopScanner('qr');
+  startBarScanner();
+}
+
+// 手入力モーダル
+function openManualInput(target) {
+  initAudio();
+  manualTarget = target;
+  const modal = document.getElementById('manual-modal');
+  const input = document.getElementById('manual-input');
+  const title = document.getElementById('modal-title');
+  if (target === 'mondban') {
+    title.textContent = '問番を手入力';
+    input.placeholder = '例：1234-567890A';
+  } else {
+    title.textContent = '受注番号を手入力';
+    input.placeholder = '例：92603-050363A';
+  }
+  input.value = '';
+  modal.classList.add('show');
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeManualInput() {
+  document.getElementById('manual-modal').classList.remove('show');
+  document.getElementById('manual-input').blur();
+}
+
+function confirmManualInput() {
+  const val = document.getElementById('manual-input').value.trim();
+  if (!val) return;
+  if (manualTarget === 'mondban') {
+    setMondban(val);
+  } else {
+    setJuchu(val);
+  }
+  closeManualInput();
+}
+
+// Enterキーで確定
+document.getElementById('manual-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') confirmManualInput();
+});
+
+// メッセージ表示
+function showMsg(cardId, text, type) {
+  const card = document.getElementById(cardId);
+  let msg = card.querySelector('.msg');
+  if (!msg) {
+    msg = document.createElement('div');
+    card.appendChild(msg);
+  }
+  msg.className = `msg ${type}`;
+  msg.textContent = text;
+}
+
+// 初期化
+window.addEventListener('load', () => {
+  document.getElementById('step1-card').style.display = 'flex';
+  document.getElementById('step1-card').style.flexDirection = 'column';
+  startBarScanner();
+});
+</script>
+</body>
+</html>
