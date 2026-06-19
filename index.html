@@ -252,6 +252,7 @@
 
   <div style="display:flex;flex-direction:column;gap:10px;">
     <button class="btn btn-secondary" id="btn-manual">✏️ 手動入力</button>
+    <button class="btn btn-secondary" id="btn-restart-camera" style="display:none;">📷 カメラを再起動</button>
     <button class="btn btn-danger" id="btn-reset">🔄 やり直す</button>
   </div>
 </div>
@@ -467,7 +468,13 @@ async function startCamera() {
     };
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
     videoEl.srcObject = stream;
-    await videoEl.play();
+
+    // iPhoneではplay()を明示的に呼ばない（autoplay属性で自動再生）
+    // 再生開始を待ってからスキャン開始
+    await new Promise((resolve) => {
+      if (videoEl.readyState >= 2) { resolve(); return; }
+      videoEl.addEventListener('canplay', resolve, { once: true });
+    });
     dbg('カメラ起動成功');
 
     // BarcodeDetectorがある場合はそちらを使う
@@ -479,7 +486,9 @@ async function startCamera() {
     }
   } catch(e) {
     dbg('カメラエラー: ' + e.message);
-    document.getElementById('camera-hint').textContent = '⚠ カメラ不可 — 手動入力をご利用ください';
+    // カメラ許可ダイアログが出なかった場合のリトライボタンを表示
+    document.getElementById('camera-hint').textContent = '⚠ カメラ不可 — 下の「カメラを再起動」をタップ';
+    document.getElementById('btn-restart-camera').style.display = 'block';
   }
 }
 
@@ -783,6 +792,11 @@ function showToast(msg) {
 // イベント登録
 // =====================
 document.getElementById('btn-reset').addEventListener('click', resetScan);
+document.getElementById('btn-restart-camera').addEventListener('click', () => {
+  document.getElementById('btn-restart-camera').style.display = 'none';
+  document.getElementById('camera-hint').textContent = 'カメラを起動中...';
+  startCamera();
+});
 document.getElementById('btn-manual').addEventListener('click', () => {
   document.getElementById('manual-barcode').value = scannedBarcode||'';
   document.getElementById('manual-qr').value = scannedQR||'';
