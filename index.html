@@ -199,13 +199,11 @@
 <div class="page" id="page-settings">
 
   <div class="card">
-    <div class="card-title">スプレッドシート設定</div>
-    <div class="fg"><label class="fl">Google APIキー</label><input class="fi" id="s-key" placeholder="AIzaSy..." type="password"></div>
+    <div class="card-title">スプレッドシート接続</div>
     <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7">
       <div style="color:var(--text);font-weight:600;margin-bottom:4px">📋 接続先（固定）</div>
-      <div>シートID：1N6FSp2KkSDO1oPcSHPgUifccZbbEXJPKBoNaSuL2Yaw</div>
       <div>シート名：基幹システム取り込み用</div>
-      <div>列：B列＝送り状番号 ／ C列＝受注番号</div>
+      <div>B列＝送り状番号 ／ C列＝受注番号</div>
     </div>
     <button class="btn btn-primary" id="btn-connect">🔗 データを読み込む</button>
     <div id="connect-status" style="margin-top:10px"></div>
@@ -215,16 +213,6 @@
     <div class="card-title">読み込みデータ</div>
     <div id="data-info"></div>
     <button class="btn btn-secondary" id="btn-reload" style="margin-top:12px">🔄 再読み込み</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">APIキーの取得方法</div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.8">
-      <div>① <a href="https://console.cloud.google.com/" target="_blank" style="color:var(--accent)">Google Cloud Console</a> にアクセス</div>
-      <div>② 「APIとサービス」→「認証情報」→「APIキーを作成」</div>
-      <div>③「Google Sheets API」を有効化</div>
-      <div>④ スプレッドシートの共有設定を「リンクを知っている全員が閲覧可」に変更</div>
-    </div>
   </div>
 </div>
 
@@ -258,8 +246,7 @@
 // ===========================
 // 定数・状態
 // ===========================
-const SHEET_ID   = '1N6FSp2KkSDO1oPcSHPgUifccZbbEXJPKBoNaSuL2Yaw';
-const SHEET_NAME = '基幹システム取り込み用';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyfogzJN4mTS-IbYhXs7FMbEPABMxuHwlitLZGbOLXbb0pazPRd3z02agHGNkDR9uvvHA/exec';
 
 let master   = [];   // {bc, qr} の配列（照合用Map）
 let masterMap = new Map(); // bcをキー、qrをvalueにしたMap（高速照合用）
@@ -537,14 +524,16 @@ function renderHistory(){
 }
 
 // ===========================
-// Google Sheets 接続
+// GAS経由でデータ取得
 // ===========================
 function buildMap(rows){
   masterMap.clear();
   master=[];
   rows.forEach(r=>{
-    if(!r[1]||!r[2]) return;
-    const bc=r[1].trim(), qr=r[2].trim(), shiji=(r[0]||'').trim();
+    const bc=String(r.bc||'').trim();
+    const qr=String(r.qr||'').trim();
+    const shiji=String(r.shiji||'').trim();
+    if(!bc||!qr) return;
     master.push({bc,qr,shiji});
     masterMap.set(bc,{qr,shiji});
   });
@@ -555,23 +544,20 @@ function updateSheetStatus(ok, msg){
   document.getElementById('ss-text').textContent = msg;
 }
 
-async function loadSheets(apiKey){
-  const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME+'!A:C')}?key=${apiKey}`;
-  const res=await fetch(url);
-  if(!res.ok) throw new Error('APIエラー '+res.status);
+async function loadFromGAS(){
+  const res=await fetch(GAS_URL);
+  if(!res.ok) throw new Error('通信エラー '+res.status);
   const json=await res.json();
-  return (json.values||[]).slice(1); // 1行目ヘッダーをスキップ
+  if(!json.data) throw new Error('データ形式エラー');
+  return json.data;
 }
 
 async function connectSheets(){
-  const apiKey=document.getElementById('s-key').value.trim();
-  if(!apiKey){showToast('APIキーを入力してください');return;}
   const st=document.getElementById('connect-status');
   st.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div><span style="font-size:13px;color:var(--text2)">接続中...</span></div>';
   try{
-    const rows=await loadSheets(apiKey);
+    const rows=await loadFromGAS();
     buildMap(rows);
-    localStorage.setItem('ks_key',apiKey);
     const msg=`✅ ${master.length}件読み込みました`;
     st.innerHTML=`<div style="color:var(--ok);font-size:13px;font-weight:600">${msg}</div>`;
     updateSheetStatus(true,`${master.length}件のデータで照合可能`);
@@ -581,8 +567,8 @@ async function connectSheets(){
       <div class="ir"><span class="ik">最終更新</span><span class="iv">${new Date().toLocaleString('ja-JP')}</span></div>`;
     showToast(master.length+'件読み込みました');
   }catch(e){
-    st.innerHTML=`<div style="color:var(--ng);font-size:13px">❌ ${e.message}<br><span style="font-size:11px">APIキーとシートの共有設定を確認してください</span></div>`;
-    updateSheetStatus(false,'接続エラー');
+    st.innerHTML=`<div style="color:var(--ng);font-size:13px">❌ ${e.message}</div>`;
+    updateSheetStatus(false,'接続エラー — 再読み込みをお試しください');
   }
 }
 
@@ -618,26 +604,21 @@ document.getElementById('btn-clear').addEventListener('click',()=>{
   renderHistory();showToast('履歴をクリアしました');
 });
 
-// 保存済みAPIキー復元
-const savedKey=localStorage.getItem('ks_key');
-if(savedKey){
-  document.getElementById('s-key').value=savedKey;
-  // 自動読み込み
-  (async()=>{
-    try{
-      const rows=await loadSheets(savedKey);
-      buildMap(rows);
-      updateSheetStatus(true,`${master.length}件のデータで照合可能`);
-      document.getElementById('card-info').style.display='block';
-      document.getElementById('data-info').innerHTML=`
-        <div class="ir"><span class="ik">件数</span><span class="iv">${master.length}件</span></div>
-        <div class="ir"><span class="ik">最終更新</span><span class="iv">${new Date().toLocaleString('ja-JP')}</span></div>`;
-      document.getElementById('connect-status').innerHTML=`<div style="color:var(--ok);font-size:13px;font-weight:600">✅ ${master.length}件読み込みました</div>`;
-    }catch(e){
-      updateSheetStatus(false,'前回の接続情報で読み込み失敗 — 再接続してください');
-    }
-  })();
-}
+// 起動時に自動読み込み
+(async()=>{
+  try{
+    const rows=await loadFromGAS();
+    buildMap(rows);
+    updateSheetStatus(true,`${master.length}件のデータで照合可能`);
+    document.getElementById('card-info').style.display='block';
+    document.getElementById('data-info').innerHTML=`
+      <div class="ir"><span class="ik">件数</span><span class="iv">${master.length}件</span></div>
+      <div class="ir"><span class="ik">最終更新</span><span class="iv">${new Date().toLocaleString('ja-JP')}</span></div>`;
+    document.getElementById('connect-status').innerHTML=`<div style="color:var(--ok);font-size:13px;font-weight:600">✅ ${master.length}件読み込みました</div>`;
+  }catch(e){
+    updateSheetStatus(false,'データ未読み込み — 設定タブで再読み込みしてください');
+  }
+})();
 
 // カメラ起動
 startCamera();
