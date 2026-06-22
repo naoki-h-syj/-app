@@ -12,94 +12,118 @@
     --accent:#3d7fff;--accent-glow:rgba(61,127,255,.18);
     --ok:#22c55e;--ok-glow:rgba(34,197,94,.18);
     --ng:#ef4444;--ng-glow:rgba(239,68,68,.18);
+    --warn:#f59e0b;--warn-glow:rgba(245,158,11,.18);
     --text:#e8eaf2;--text2:#8b90a8;
     --radius:14px;--radius-sm:8px;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;min-height:100dvh;display:flex;flex-direction:column}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,'Hiragino Kaku Gothic ProN',sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 
-  header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
   header h1{font-size:16px;font-weight:700}
   .badge{font-size:11px;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:3px 10px;font-weight:600}
 
-  .page{display:none;flex-direction:column;flex:1;padding:12px;gap:12px;overflow-y:auto}
+  /* ページ */
+  .page{display:none;flex-direction:column;flex:1;overflow:hidden}
   .page.active{display:flex}
 
-  /* ステップ */
-  .step-bar{display:flex;gap:6px;align-items:flex-start}
-  .step-col{display:flex;flex-direction:column;align-items:center;gap:3px}
-  .step-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid var(--border);color:var(--text2);background:var(--surface);transition:all .25s;flex-shrink:0}
-  .step-dot.active{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
-  .step-dot.done{border-color:var(--ok);color:var(--ok);background:var(--ok-glow)}
-  .step-line{flex:1;height:2px;background:var(--border);border-radius:2px;margin-top:12px;transition:background .25s}
-  .step-line.done{background:var(--ok)}
-  .step-label{font-size:10px;color:var(--text2);text-align:center;white-space:nowrap}
+  /* ========== 検品ページレイアウト ========== */
+  #page-scan{padding:10px;gap:8px}
 
-  /* カード */
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
-  .card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+  /* ステータスバー */
+  #sheet-status-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+  #sheet-status-bar .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
-  /* カメラ */
-  #scanner-wrap{position:relative;background:#000;border-radius:var(--radius-sm);overflow:hidden;aspect-ratio:4/3;border:2px solid var(--accent);transition:border-color .2s}
+  /* 送り状表示 */
+  #bc-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+  #bc-bar .label{font-size:11px;color:var(--text2);flex-shrink:0}
+  #bc-bar .val{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;flex:1}
+  #bc-bar .val.ph{color:var(--text2);font-weight:400;font-size:13px}
+  #bc-bar .step-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0}
+  .pill-step1{background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent)}
+  .pill-step2{background:var(--ok-glow);color:var(--ok);border:1px solid var(--ok)}
+
+  /* カメラ — 固定高さで小さめに */
+  #camera-area{flex-shrink:0}
+  #scanner-wrap{position:relative;background:#000;border-radius:var(--radius-sm);overflow:hidden;height:200px;border:2px solid var(--accent);transition:border-color .2s}
   #scanner-wrap video{width:100%;height:100%;object-fit:cover;display:block}
   .scan-guide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
   #scan-frame{border:2px solid rgba(61,127,255,.9);border-radius:6px;position:relative;transition:all .3s}
-  .frame-bar{width:80%;height:26%}
-  .frame-qr{width:54%;height:54%}
+  .frame-bar{width:82%;height:40%}
+  .frame-qr{width:50%;height:80%}
   #scan-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sline 1.6s ease-in-out infinite}
   @keyframes sline{0%,100%{top:0}50%{top:100%}}
-  .camera-hint{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,.92);background:rgba(0,0,0,.65);padding:6px}
+  .camera-hint{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,.92);background:rgba(0,0,0,.65);padding:5px}
   .border-ok{border-color:var(--ok)!important;animation:fok .45s ease}
   .border-ng{border-color:var(--ng)!important;animation:fng .45s ease}
   @keyframes fok{50%{box-shadow:0 0 0 4px var(--ok-glow)}}
   @keyframes fng{50%{box-shadow:0 0 0 4px var(--ng-glow)}}
 
-  /* 読み取り値 */
-  .sv{background:var(--surface2);border-radius:var(--radius-sm);padding:11px 13px;display:flex;align-items:center;gap:9px;min-height:46px}
-  .sv .ico{font-size:17px;flex-shrink:0}
-  .sv .val{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;flex:1}
-  .sv .val.ph{color:var(--text2);font-weight:400;font-size:13px}
-  .sdot{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0}
-  .sdot.ok{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+  /* 結果パネル — タップで次へ */
+  #result-area{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
 
-  /* 結果 */
-  .rp{border-radius:var(--radius);padding:18px;text-align:center;border:2px solid;animation:popin .28s cubic-bezier(.34,1.56,.64,1)}
-  @keyframes popin{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
-  .rp.ok{background:var(--ok-glow);border-color:var(--ok)}
-  .rp.ng{background:var(--ng-glow);border-color:var(--ng)}
-  .ri{font-size:46px;margin-bottom:6px}
-  .rt{font-size:21px;font-weight:800;margin-bottom:5px}
-  .rp.ok .rt{color:var(--ok)}
-  .rp.ng .rt{color:var(--ng)}
-  .rd{font-size:13px;color:var(--text2);line-height:1.75}
+  /* 待機状態 */
+  #result-idle{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  #result-idle .idle-icon{font-size:36px;opacity:.4}
+  #result-idle .idle-text{font-size:13px;color:var(--text2)}
 
-  /* ボタン */
-  .btn{width:100%;padding:14px;border-radius:var(--radius);border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all .12s}
+  /* OK/NG タップパネル */
+  #result-tap{flex:1;border-radius:var(--radius);border:3px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;user-select:none;transition:opacity .1s;-webkit-tap-highlight-color:transparent;display:none;animation:popin .25s cubic-bezier(.34,1.56,.64,1)}
+  #result-tap:active{opacity:.8}
+  @keyframes popin{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
+  #result-tap.ok{background:var(--ok-glow);border-color:var(--ok)}
+  #result-tap.ng{background:var(--ng-glow);border-color:var(--ng)}
+  #result-tap .tap-icon{font-size:42px}
+  #result-tap .tap-title{font-size:22px;font-weight:800}
+  #result-tap.ok .tap-title{color:var(--ok)}
+  #result-tap.ng .tap-title{color:var(--ng)}
+  #result-tap .tap-detail{font-size:12px;color:var(--text2);text-align:center;line-height:1.6;padding:0 16px}
+  #result-tap .tap-next{font-size:11px;margin-top:4px;opacity:.6}
+  #result-tap.ok .tap-next{color:var(--ok)}
+  #result-tap.ng .tap-next{color:var(--ng)}
+
+  /* やり直しボタン */
+  #btn-reset-wrap{flex-shrink:0;display:flex;gap:8px}
+  .btn{width:100%;padding:12px;border-radius:var(--radius);border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all .12s}
   .btn:active{transform:scale(.97)}
-  .btn-primary{background:var(--accent);color:#fff}
   .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
   .btn-danger{background:rgba(239,68,68,.15);color:var(--ng);border:1px solid var(--ng)}
+  .btn-primary{background:var(--accent);color:#fff}
 
-  /* 履歴 */
-  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  /* ========== 履歴ページ ========== */
+  #page-history{padding:12px;gap:12px;overflow-y:auto}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex-shrink:0}
   .stat-card{background:var(--surface2);border-radius:var(--radius-sm);padding:13px;text-align:center}
   .stat-num{font-size:28px;font-weight:800}
   .stat-num.ok{color:var(--ok)}
   .stat-num.ng{color:var(--ng)}
   .stat-label{font-size:11px;color:var(--text2);margin-top:3px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+  .card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
   .hl{display:flex;flex-direction:column;gap:7px}
-  .hi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;display:flex;gap:10px;align-items:center;border-left:3px solid}
+  .hi{background:var(--surface2);border-radius:var(--radius-sm);padding:11px 13px;display:flex;gap:10px;align-items:center;border-left:3px solid}
   .hi.ok{border-left-color:var(--ok)}
   .hi.ng{border-left-color:var(--ng)}
   .hi-info{flex:1;min-width:0}
-  .hi-num{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hi-num{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .hi-time{font-size:11px;color:var(--text2);margin-top:2px}
   .hbadge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;flex-shrink:0}
   .hbadge.ok{background:var(--ok-glow);color:var(--ok)}
   .hbadge.ng{background:var(--ng-glow);color:var(--ng)}
 
+  /* ========== 設定ページ ========== */
+  #page-settings{padding:12px;gap:12px;overflow-y:auto}
+  .fg{margin-bottom:12px}
+  .fl{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-weight:600}
+  .fi{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:11px 13px;font-size:14px;outline:none;transition:border-color .18s}
+  .fi:focus{border-color:var(--accent)}
+  .ir{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .ir:last-child{border-bottom:none}
+  .ik{font-size:12px;color:var(--text2);flex:0 0 90px}
+  .iv{font-size:13px;font-weight:600;word-break:break-all}
+
   /* ナビ */
-  nav{background:var(--surface);border-top:1px solid var(--border);display:flex;position:sticky;bottom:0;z-index:100}
+  nav{background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0}
   nav button{flex:1;background:none;border:none;color:var(--text2);padding:9px 0 13px;font-size:10px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .18s}
   nav button.active{color:var(--accent)}
   .ni{font-size:21px}
@@ -112,24 +136,10 @@
   .md-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
   .md-title{font-size:16px;font-weight:700;margin-bottom:14px}
 
-  /* フォーム */
-  .fg{margin-bottom:12px}
-  .fl{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-weight:600}
-  .fi{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:11px 13px;font-size:14px;outline:none;transition:border-color .18s}
-  .fi:focus{border-color:var(--accent)}
-  .ir{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
-  .ir:last-child{border-bottom:none}
-  .ik{font-size:12px;color:var(--text2);flex:0 0 110px}
-  .iv{font-size:13px;font-weight:600;word-break:break-all}
-
-  /* ステータス表示 */
-  #sheet-status-bar{background:var(--surface2);border-radius:var(--radius-sm);padding:9px 13px;font-size:12px;display:flex;align-items:center;gap:8px}
-  #sheet-status-bar .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-
   .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .55s linear infinite;flex-shrink:0}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  #toast{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:9px 18px;font-size:13px;z-index:999;opacity:0;transition:opacity .25s;white-space:nowrap;pointer-events:none}
+  #toast{position:fixed;top:62px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;z-index:999;opacity:0;transition:opacity .25s;white-space:nowrap;pointer-events:none}
   #toast.show{opacity:1}
 </style>
 </head>
@@ -140,64 +150,72 @@
   <span class="badge" id="header-count">0件完了</span>
 </header>
 
-<!-- ========== 検品 ========== -->
+<!-- ========== 検品ページ ========== -->
 <div class="page active" id="page-scan">
 
   <!-- シート接続状態 -->
   <div id="sheet-status-bar">
     <div class="dot" id="ss-dot" style="background:var(--border)"></div>
-    <span id="ss-text">データ未読み込み — 設定タブで接続してください</span>
+    <span id="ss-text">データ読み込み中...</span>
   </div>
 
-  <div class="step-bar">
-    <div class="step-col"><div class="step-dot active" id="dot1">1</div><div class="step-label">送り状</div></div>
-    <div class="step-line" id="line1"></div>
-    <div class="step-col"><div class="step-dot" id="dot2">2</div><div class="step-label">受注番号</div></div>
-    <div class="step-line" id="line2"></div>
-    <div class="step-col"><div class="step-dot" id="dot3">3</div><div class="step-label">照合</div></div>
+  <!-- 送り状番号表示バー -->
+  <div id="bc-bar">
+    <span class="label">📊 送り状</span>
+    <span class="val ph" id="bc-val">未スキャン</span>
+    <span class="step-pill pill-step1" id="step-pill">STEP 1</span>
   </div>
 
-  <div class="card" style="padding:12px">
-    <div class="card-title" id="scan-label">STEP 1 ： 送り状バーコードをスキャン</div>
+  <!-- カメラ -->
+  <div id="camera-area">
     <div id="scanner-wrap">
       <video id="scan-video" autoplay playsinline muted></video>
       <div class="scan-guide"><div id="scan-frame" class="frame-bar"></div></div>
-      <div class="camera-hint" id="camera-hint">NW7バーコードをフレームに合わせてください</div>
+      <div class="camera-hint" id="camera-hint">送り状バーコードをフレームに合わせてください</div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-title">読み取り結果</div>
-    <div style="display:flex;flex-direction:column;gap:7px">
-      <div class="sv"><span class="ico">📊</span><span class="val ph" id="sv-bc">送り状番号 未読み取り</span><div class="sdot" id="dot-bc"></div></div>
-      <div class="sv"><span class="ico">📱</span><span class="val ph" id="sv-qr">受注番号 未読み取り</span><div class="sdot" id="dot-qr"></div></div>
+  <!-- 結果エリア（flex:1 で残りスペースを埋める） -->
+  <div id="result-area">
+    <!-- 待機中表示 -->
+    <div id="result-idle">
+      <div class="idle-icon">📷</div>
+      <div class="idle-text" id="idle-text">まず送り状バーコードをスキャン</div>
+    </div>
+    <!-- OK/NGタップパネル（スキャン後に表示） -->
+    <div id="result-tap" onclick="onTapResult()">
+      <div class="tap-icon" id="tap-icon"></div>
+      <div class="tap-title" id="tap-title"></div>
+      <div class="tap-detail" id="tap-detail"></div>
+      <div class="tap-next" id="tap-next">▶ タップして次へ</div>
     </div>
   </div>
 
-  <div id="result-panel" style="display:none"></div>
-
-  <div style="display:flex;flex-direction:column;gap:9px">
-    <button class="btn btn-secondary" id="btn-manual">✏️ 手動入力</button>
-    <button class="btn btn-danger" id="btn-reset">🔄 やり直す</button>
+  <!-- 操作ボタン -->
+  <div id="btn-reset-wrap">
+    <button class="btn btn-secondary" id="btn-manual" style="flex:1">✏️ 手動入力</button>
+    <button class="btn btn-danger" id="btn-reset" style="flex:1">🔄 送り状からやり直す</button>
   </div>
+
 </div>
 
-<!-- ========== 履歴 ========== -->
+<!-- ========== 履歴ページ ========== -->
 <div class="page" id="page-history">
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-num ok" id="stat-ok">0</div><div class="stat-label">✅ 照合OK</div></div>
     <div class="stat-card"><div class="stat-num ng" id="stat-ng">0</div><div class="stat-label">❌ 照合NG</div></div>
   </div>
-  <div class="card">
+  <div class="card" style="flex:1;overflow-y:auto;min-height:0">
     <div class="card-title">検品履歴</div>
-    <div class="hl" id="history-list"><div style="text-align:center;padding:28px;color:var(--text2);font-size:13px">まだ検品記録がありません</div></div>
+    <div class="hl" id="history-list">
+      <div style="text-align:center;padding:28px;color:var(--text2);font-size:13px">まだ検品記録がありません</div>
+    </div>
   </div>
-  <button class="btn btn-danger" id="btn-clear" style="margin-top:auto">🗑️ 履歴をクリア</button>
+  <button class="btn btn-danger" id="btn-clear" style="flex-shrink:0">🗑️ 履歴をクリア</button>
 </div>
 
-<!-- ========== 設定 ========== -->
+<!-- ========== 設定ページ ========== -->
 <div class="page" id="page-settings">
-
   <div class="card">
     <div class="card-title">スプレッドシート接続</div>
     <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7">
@@ -205,14 +223,12 @@
       <div>シート名：基幹システム取り込み用</div>
       <div>B列＝送り状番号 ／ C列＝受注番号</div>
     </div>
-    <button class="btn btn-primary" id="btn-connect">🔗 データを読み込む</button>
+    <button class="btn btn-primary" id="btn-connect">🔗 データを再読み込み</button>
     <div id="connect-status" style="margin-top:10px"></div>
   </div>
-
   <div class="card" id="card-info" style="display:none">
     <div class="card-title">読み込みデータ</div>
     <div id="data-info"></div>
-    <button class="btn btn-secondary" id="btn-reload" style="margin-top:12px">🔄 再読み込み</button>
   </div>
 </div>
 
@@ -238,22 +254,28 @@
 
 <div id="toast"></div>
 
-<!-- ライブラリ -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
 // ===========================
-// 定数・状態
+// 設定
 // ===========================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyfogzJN4mTS-IbYhXs7FMbEPABMxuHwlitLZGbOLXbb0pazPRd3z02agHGNkDR9uvvHA/exec';
 
-let master   = [];   // {bc, qr} の配列（照合用Map）
-let masterMap = new Map(); // bcをキー、qrをvalueにしたMap（高速照合用）
-let logs     = [];
-let statOK=0, statNG=0;
-let step=1, gotBC=null, gotQR=null, cooldown=false;
-let stream=null, quaggaRunning=false, qrRaf=null, qrCanvas=null, qrCtx=null;
+// ===========================
+// 状態
+// ===========================
+// masterMap: bc -> Set<qr>  （1つの送り状番号に複数の受注番号が対応可能）
+let masterMap = new Map();
+let logs = [], statOK = 0, statNG = 0;
+
+// スキャンフロー
+// step: 'bc' = 送り状待ち  'qr' = 受注番号待ち  'result' = 結果表示中
+let step = 'bc';
+let currentBC = null;   // 現在スキャン中の送り状番号
+let cooldown = false;
+let stream = null, quaggaRunning = false, qrRaf = null, qrCanvas = null, qrCtx = null;
 
 // ===========================
 // 音
@@ -291,22 +313,23 @@ async function startCamera(){
     stream = await navigator.mediaDevices.getUserMedia({
       video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
     });
-    const vid=document.getElementById('scan-video');
-    vid.srcObject=stream;
+    const vid = document.getElementById('scan-video');
+    vid.srcObject = stream;
     await new Promise(r=>{vid.readyState>=2?r():vid.addEventListener('canplay',r,{once:true})});
-    startStep();
+    startScanStep();
   }catch(e){
-    document.getElementById('camera-hint').textContent='⚠ カメラ不可 — 手動入力をご利用ください';
+    document.getElementById('camera-hint').textContent = '⚠ カメラ不可 — 手動入力をご利用ください';
   }
 }
 
 // ===========================
 // スキャナー切替
 // ===========================
-function startStep(){
+function startScanStep(){
   stopAll();
-  if(step===1) startQuagga();
-  else if(step===2) startJsQR();
+  if(step==='bc')     startQuagga();
+  else if(step==='qr') startJsQR();
+  // 'result'の時はスキャナー停止のまま
 }
 
 function stopAll(){
@@ -315,38 +338,28 @@ function stopAll(){
 }
 
 // ===========================
-// QuaggaJS — NW7バーコード
+// QuaggaJS — 送り状バーコード
 // ===========================
 function startQuagga(){
   if(!stream) return;
-  const vid=document.getElementById('scan-video');
-
+  const vid = document.getElementById('scan-video');
   Quagga.init({
     inputStream:{
-      type:'LiveStream',
-      target:vid,
+      type:'LiveStream', target:vid,
       constraints:{facingMode:'environment'},
-      area:{top:'25%',right:'5%',bottom:'25%',left:'5%'}, // 読み取りエリアを中央帯に限定→高速化
+      area:{top:'15%',right:'5%',bottom:'15%',left:'5%'},
     },
-    decoder:{
-      readers:['codabar_reader','code_128_reader'], // NW7はcodabar_reader。必要最小限に絞る→高速化
-      multiple:false,
-    },
-    locate:false,          // locate=falseで処理軽量化（エリア指定で代替）
-    numOfWorkers:0,        // iOSではWorker非対応
-    frequency:20,          // 毎秒20フレーム解析
+    decoder:{readers:['codabar_reader','code_128_reader'],multiple:false},
+    locate:false, numOfWorkers:0, frequency:20,
   }, err=>{
-    if(err){console.warn('Quagga init:',err);return;}
+    if(err) return;
     Quagga.start();
     quaggaRunning=true;
   });
-
   Quagga.offDetected();
   Quagga.onDetected(r=>{
-    if(step!==1||cooldown) return;
-    const code=r.codeResult.code;
-    const fmt=r.codeResult.format;
-    onScanBC(code, fmt);
+    if(step!=='bc'||cooldown) return;
+    onScanBC(r.codeResult.code, r.codeResult.format);
   });
 }
 
@@ -354,20 +367,16 @@ function startQuagga(){
 // jsQR — 受注番号QR
 // ===========================
 function startJsQR(){
-  const vid=document.getElementById('scan-video');
+  const vid = document.getElementById('scan-video');
   if(!qrCanvas){
-    qrCanvas=document.createElement('canvas');
-    qrCtx=qrCanvas.getContext('2d',{willReadFrequently:true});
+    qrCanvas = document.createElement('canvas');
+    qrCtx = qrCanvas.getContext('2d',{willReadFrequently:true});
   }
-
-  // 解析サイズを640x480に縮小→高速化（元映像は1280x720だが縮小しても十分読める）
   const W=640, H=480;
   qrCanvas.width=W; qrCanvas.height=H;
-
   let lastMs=0;
   function loop(ts){
-    if(step!==2) return;
-    // 30fps上限（33ms間隔）
+    if(step!=='qr') return;
     if(ts-lastMs>33){
       lastMs=ts;
       if(vid.readyState>=2){
@@ -386,156 +395,212 @@ function startJsQR(){
 // 番号抽出
 // ===========================
 function extractBC(raw, fmt){
-  let v=raw.trim();
+  let v = raw.trim();
   if(fmt&&fmt.toLowerCase().includes('codabar'))
-    v=v.replace(/^[a-dA-D]/,'').replace(/[a-dA-D]$/,'');
+    v = v.replace(/^[a-dA-D]/,'').replace(/[a-dA-D]$/,'');
   return v.replace(/\D/g,'');
 }
 
 function extractQR(raw){
-  const s=raw.trim().replace(/^["'\u201c]/,'');
+  const s = raw.trim().replace(/^["'\u201c]/,'');
   if(s.startsWith('9')){
-    const body=s.slice(1);
-    const sp=body.search(/[\s\u3000]/);
-    return sp>=0?body.slice(0,sp):body;
+    const body = s.slice(1);
+    const sp = body.search(/[\s\u3000]/);
+    return sp>=0 ? body.slice(0,sp) : body;
   }
   return s;
 }
 
 // ===========================
-// スキャンハンドラ
+// スキャンハンドラ — 送り状
 // ===========================
 function onScanBC(raw, fmt){
-  if(cooldown||step!==1) return;
-  const digits=extractBC(raw,fmt);
-  if(digits.length!==10&&digits.length!==12) return;
-  gotBC=digits;
+  if(cooldown||step!=='bc') return;
+  const digits = extractBC(raw, fmt);
+  if(digits.length!==10 && digits.length!==12) return;
+
+  currentBC = digits;
   setCooldown();
-  setVal('sv-bc','dot-bc',digits);
-  playBeep(); flash('ok');
-  step=2; updateStepUI(); startStep();
+
+  // 送り状バー更新
+  const bcVal = document.getElementById('bc-val');
+  bcVal.textContent = digits;
+  bcVal.classList.remove('ph');
+  const pill = document.getElementById('step-pill');
+  pill.textContent = 'STEP 2';
+  pill.className = 'step-pill pill-step2';
+
+  // カメラフレームをQR用に
+  document.getElementById('scan-frame').className = 'frame-qr';
+  document.getElementById('camera-hint').textContent = '受注番号QRコードをスキャンしてください';
+
+  // 待機テキスト更新
+  document.getElementById('idle-text').textContent = '受注番号QRをスキャン → タップして次へ';
+
+  playBeep();
+  flash('ok');
+
+  step = 'qr';
+  startScanStep();
 }
 
+// ===========================
+// スキャンハンドラ — 受注番号QR
+// ===========================
 function onScanQR(raw){
-  if(cooldown||step!==2) return;
-  const val=extractQR(raw);
+  if(cooldown||step!=='qr') return;
+  const val = extractQR(raw);
   if(!val||val.length<4) return;
-  gotQR=val;
+
   setCooldown();
-  setVal('sv-qr','dot-qr',val);
-  playBeep(); flash('ok');
-  step=3; updateStepUI(); stopAll(); doVerify();
+  step = 'result';
+  stopAll();
+
+  doVerify(val);
 }
 
 function setCooldown(){cooldown=true;setTimeout(()=>cooldown=false,1800);}
 
 // ===========================
-// 照合（Mapで高速検索）
+// 照合（1:N対応）
+// masterMap: bc -> Set<qr>
 // ===========================
-function doVerify(){
-  // masterMapのキー：bc値、value：{qr, shiji}
-  const entry = masterMap.get(gotBC);
-  const matched = entry && entry.qr === gotQR;
-  const panel=document.getElementById('result-panel');
-  panel.style.display='block';
-  const t=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+function doVerify(qr){
+  const qrSet = masterMap.get(currentBC);
+  const bcExists = qrSet !== undefined;
+  const matched  = bcExists && qrSet.has(qr);
+
+  const t = new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const tapEl = document.getElementById('result-tap');
+  const idleEl = document.getElementById('result-idle');
+
+  idleEl.style.display = 'none';
+  tapEl.style.display  = 'flex';
 
   if(matched){
-    panel.innerHTML=`<div class="rp ok"><div class="ri">✅</div><div class="rt">照合 OK</div><div class="rd">指示書番号：<strong>${entry.shiji||'—'}</strong><br>送り状：${gotBC}<br>受注番号：${gotQR}<br><span style="margin-top:5px;display:block">${t}</span></div></div>`;
+    tapEl.className = 'ok';  // result-tap クラスはCSSで指定済み、追加でok付与
+    tapEl.id = 'result-tap'; // idは維持
+    tapEl.classList.add('ok');
+    document.getElementById('tap-icon').textContent  = '✅';
+    document.getElementById('tap-title').textContent = '照合 OK';
+    document.getElementById('tap-detail').textContent = `送り状：${currentBC}\n受注番号：${qr}`;
+    document.getElementById('tap-next').textContent  = '▶ タップして次のQRへ';
     playOK(); flash('ok');
-    addLog('ok',gotBC,gotQR,entry.shiji||'',t); statOK++;
-  }else{
-    const bcExists = masterMap.has(gotBC);
-    const qrExists = [...masterMap.values()].some(v=>v.qr===gotQR);
-    const hint = !bcExists?'送り状番号がデータに存在しません'
-                :!qrExists?'受注番号がデータに存在しません'
-                :'番号はそれぞれ存在しますが組み合わせが違います';
-    panel.innerHTML=`<div class="rp ng"><div class="ri">❌</div><div class="rt">照合 NG</div><div class="rd">${hint}<br>送り状：${gotBC}<br>受注番号：${gotQR}<br><span style="margin-top:5px;display:block">${t}</span></div></div>`;
+    addLog('ok', currentBC, qr, t); statOK++;
+  } else {
+    tapEl.className = '';
+    tapEl.id = 'result-tap';
+    tapEl.classList.add('ng');
+    const hint = !bcExists ? '送り状番号がデータに存在しません'
+               : '受注番号がこの送り状に紐づいていません';
+    document.getElementById('tap-icon').textContent  = '❌';
+    document.getElementById('tap-title').textContent = '照合 NG';
+    document.getElementById('tap-detail').textContent = `${hint}\n送り状：${currentBC}\n受注番号：${qr}`;
+    document.getElementById('tap-next').textContent  = '▶ タップして次のQRへ';
     playNG(); flash('ng');
-    addLog('ng',gotBC,gotQR,null,t); statNG++;
+    addLog('ng', currentBC, qr, t); statNG++;
   }
-  document.getElementById('stat-ok').textContent=statOK;
-  document.getElementById('stat-ng').textContent=statNG;
-  document.getElementById('header-count').textContent=(statOK+statNG)+'件完了';
+
+  document.getElementById('stat-ok').textContent = statOK;
+  document.getElementById('stat-ng').textContent = statNG;
+  document.getElementById('header-count').textContent = (statOK+statNG)+'件完了';
+}
+
+// ===========================
+// 結果タップ → 次のQRへ
+// ===========================
+function onTapResult(){
+  if(step !== 'result') return;
+
+  // 結果パネルを隠して待機に戻す
+  document.getElementById('result-tap').style.display = 'none';
+  document.getElementById('result-idle').style.display = '';
+
+  step = 'qr';
+  setCooldown();
+  startScanStep();
 }
 
 // ===========================
 // 手動入力
 // ===========================
 function submitManual(){
-  const bc=document.getElementById('m-bc').value.trim().replace(/\D/g,'');
-  const qr=document.getElementById('m-qr').value.trim();
+  const bc = document.getElementById('m-bc').value.trim().replace(/\D/g,'');
+  const qr = document.getElementById('m-qr').value.trim();
   if(!bc||!qr){showToast('両方入力してください');return;}
   if(bc.length!==10&&bc.length!==12){showToast('送り状番号は10桁または12桁');return;}
-  gotBC=bc; gotQR=qr;
-  setVal('sv-bc','dot-bc',bc); setVal('sv-qr','dot-qr',qr);
-  closeModal(); stopAll(); step=3; updateStepUI(); doVerify();
+
+  // 送り状が未セットの場合はセット
+  if(!currentBC || step==='bc'){
+    currentBC = bc;
+    const bcVal = document.getElementById('bc-val');
+    bcVal.textContent = bc;
+    bcVal.classList.remove('ph');
+    document.getElementById('step-pill').textContent = 'STEP 2';
+    document.getElementById('step-pill').className = 'step-pill pill-step2';
+  }
+
+  closeModal();
+  stopAll();
+  step = 'result';
+  doVerify(qr);
 }
 
 // ===========================
-// UI helpers
+// リセット（送り状からやり直し）
 // ===========================
-function setVal(svId,dotId,v){
-  const el=document.getElementById(svId);
-  el.textContent=v; el.classList.remove('ph');
-  document.getElementById(dotId).className='sdot ok';
-}
-
-function updateStepUI(){
-  const labels=['STEP 1 ： 送り状バーコードをスキャン','STEP 2 ： 受注番号QRコードをスキャン','STEP 3 ： 照合完了'];
-  const hints=['NW7バーコードをフレームに合わせてください','QRコードをフレームに合わせてください','「やり直す」で次の検品へ'];
-  document.getElementById('scan-label').textContent=labels[step-1];
-  document.getElementById('camera-hint').textContent=hints[step-1];
-  ['dot1','dot2','dot3'].forEach((id,i)=>{
-    document.getElementById(id).className='step-dot'+(i+1<step?' done':i+1===step?' active':'');
-  });
-  ['line1','line2'].forEach((id,i)=>{
-    document.getElementById(id).className='step-line'+(i+1<step?' done':'');
-  });
-  document.getElementById('scan-frame').className=step===2?'frame-qr':'frame-bar';
-}
-
-function flash(type){
-  const w=document.getElementById('scanner-wrap');
-  w.classList.remove('border-ok','border-ng');
-  void w.offsetWidth;
-  w.classList.add('border-'+type);
-  setTimeout(()=>w.classList.remove('border-ok','border-ng'),550);
-}
-
 function resetScan(){
-  stopAll(); step=1; gotBC=null; gotQR=null; cooldown=false;
-  const ph=[['sv-bc','送り状番号 未読み取り'],['sv-qr','受注番号 未読み取り']];
-  ph.forEach(([id,txt])=>{const el=document.getElementById(id);el.textContent=txt;el.className='val ph';});
-  document.getElementById('dot-bc').className='sdot';
-  document.getElementById('dot-qr').className='sdot';
-  document.getElementById('result-panel').style.display='none';
-  updateStepUI(); startStep();
+  stopAll();
+  step = 'bc'; currentBC = null; cooldown = false;
+
+  const bcVal = document.getElementById('bc-val');
+  bcVal.textContent = '未スキャン';
+  bcVal.classList.add('ph');
+  document.getElementById('step-pill').textContent = 'STEP 1';
+  document.getElementById('step-pill').className = 'step-pill pill-step1';
+  document.getElementById('scan-frame').className = 'frame-bar';
+  document.getElementById('camera-hint').textContent = '送り状バーコードをフレームに合わせてください';
+  document.getElementById('idle-text').textContent = 'まず送り状バーコードをスキャン';
+  document.getElementById('result-tap').style.display = 'none';
+  document.getElementById('result-idle').style.display = '';
+
+  startScanStep();
 }
 
 // ===========================
 // 履歴
 // ===========================
-function addLog(status,bc,qr,shiji,time){logs.unshift({status,bc,qr,shiji,time});if(logs.length>300)logs.pop();}
+function addLog(status, bc, qr, time){
+  logs.unshift({status, bc, qr, time});
+  if(logs.length>300) logs.pop();
+}
 function renderHistory(){
-  const el=document.getElementById('history-list');
-  if(!logs.length){el.innerHTML='<div style="text-align:center;padding:28px;color:var(--text2);font-size:13px">まだ検品記録がありません</div>';return;}
-  el.innerHTML=logs.map(h=>`<div class="hi ${h.status}"><div class="hi-info"><div class="hi-num">📊 ${h.bc} ／ 📱 ${h.qr}</div><div class="hi-time">${h.shiji?'指示書：'+h.shiji+' ・ ':'NG ・ '}${h.time}</div></div><div class="hbadge ${h.status}">${h.status==='ok'?'OK':'NG'}</div></div>`).join('');
+  const el = document.getElementById('history-list');
+  if(!logs.length){
+    el.innerHTML='<div style="text-align:center;padding:28px;color:var(--text2);font-size:13px">まだ検品記録がありません</div>';
+    return;
+  }
+  el.innerHTML = logs.map(h=>`
+    <div class="hi ${h.status}">
+      <div class="hi-info">
+        <div class="hi-num">📊 ${h.bc} ／ 📱 ${h.qr}</div>
+        <div class="hi-time">${h.time}</div>
+      </div>
+      <div class="hbadge ${h.status}">${h.status==='ok'?'OK':'NG'}</div>
+    </div>`).join('');
 }
 
 // ===========================
-// GAS経由でデータ取得
+// Google Sheets（GAS経由）
 // ===========================
 function buildMap(rows){
   masterMap.clear();
-  master=[];
   rows.forEach(r=>{
-    const bc=String(r.bc||'').trim();
-    const qr=String(r.qr||'').trim();
-    const shiji=String(r.shiji||'').trim();
+    const bc = String(r.bc||'').trim();
+    const qr = String(r.qr||'').trim();
     if(!bc||!qr) return;
-    master.push({bc,qr,shiji});
-    masterMap.set(bc,{qr,shiji});
+    if(!masterMap.has(bc)) masterMap.set(bc, new Set());
+    masterMap.get(bc).add(qr);
   });
 }
 
@@ -545,27 +610,27 @@ function updateSheetStatus(ok, msg){
 }
 
 async function loadFromGAS(){
-  const res=await fetch(GAS_URL);
+  const res = await fetch(GAS_URL);
   if(!res.ok) throw new Error('通信エラー '+res.status);
-  const json=await res.json();
+  const json = await res.json();
   if(!json.data) throw new Error('データ形式エラー');
   return json.data;
 }
 
 async function connectSheets(){
-  const st=document.getElementById('connect-status');
+  const st = document.getElementById('connect-status');
   st.innerHTML='<div style="display:flex;align-items:center;gap:8px"><div class="spinner"></div><span style="font-size:13px;color:var(--text2)">接続中...</span></div>';
   try{
-    const rows=await loadFromGAS();
+    const rows = await loadFromGAS();
     buildMap(rows);
-    const msg=`✅ ${master.length}件読み込みました`;
-    st.innerHTML=`<div style="color:var(--ok);font-size:13px;font-weight:600">${msg}</div>`;
-    updateSheetStatus(true,`${master.length}件のデータで照合可能`);
+    const total = [...masterMap.values()].reduce((s,v)=>s+v.size,0);
+    st.innerHTML=`<div style="color:var(--ok);font-size:13px;font-weight:600">✅ ${total}件読み込みました</div>`;
+    updateSheetStatus(true, `${total}件のデータで照合可能`);
     document.getElementById('card-info').style.display='block';
     document.getElementById('data-info').innerHTML=`
-      <div class="ir"><span class="ik">件数</span><span class="iv">${master.length}件</span></div>
+      <div class="ir"><span class="ik">件数</span><span class="iv">${total}件</span></div>
       <div class="ir"><span class="ik">最終更新</span><span class="iv">${new Date().toLocaleString('ja-JP')}</span></div>`;
-    showToast(master.length+'件読み込みました');
+    showToast(total+'件読み込みました');
   }catch(e){
     st.innerHTML=`<div style="color:var(--ng);font-size:13px">❌ ${e.message}</div>`;
     updateSheetStatus(false,'接続エラー — 再読み込みをお試しください');
@@ -578,43 +643,53 @@ async function connectSheets(){
 function closeModal(){document.getElementById('modal-manual').classList.remove('show');}
 function showToast(msg){
   const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
+  t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+function flash(type){
+  const w=document.getElementById('scanner-wrap');
+  w.classList.remove('border-ok','border-ng');
+  void w.offsetWidth;
+  w.classList.add('border-'+type);
+  setTimeout(()=>w.classList.remove('border-ok','border-ng'),550);
 }
 
 // ===========================
 // イベント登録
 // ===========================
-document.getElementById('btn-reset').addEventListener('click',resetScan);
-document.getElementById('btn-manual').addEventListener('click',()=>{
-  document.getElementById('m-bc').value=gotBC||'';
-  document.getElementById('m-qr').value=gotQR||'';
+document.getElementById('btn-reset').addEventListener('click', resetScan);
+document.getElementById('btn-manual').addEventListener('click', ()=>{
+  document.getElementById('m-bc').value = currentBC||'';
+  document.getElementById('m-qr').value = '';
   document.getElementById('modal-manual').classList.add('show');
 });
-document.getElementById('modal-manual').addEventListener('click',e=>{
-  if(e.target===document.getElementById('modal-manual'))closeModal();
+document.getElementById('modal-manual').addEventListener('click', e=>{
+  if(e.target===document.getElementById('modal-manual')) closeModal();
 });
-document.getElementById('btn-connect').addEventListener('click',connectSheets);
-document.getElementById('btn-reload').addEventListener('click',connectSheets);
-document.getElementById('btn-clear').addEventListener('click',()=>{
-  logs=[];statOK=0;statNG=0;
+document.getElementById('btn-connect').addEventListener('click', connectSheets);
+document.getElementById('btn-clear').addEventListener('click', ()=>{
+  logs=[]; statOK=0; statNG=0;
   document.getElementById('stat-ok').textContent=0;
   document.getElementById('stat-ng').textContent=0;
   document.getElementById('header-count').textContent='0件完了';
-  renderHistory();showToast('履歴をクリアしました');
+  renderHistory(); showToast('履歴をクリアしました');
 });
 
-// 起動時に自動読み込み
+// ===========================
+// 起動
+// ===========================
+// データ自動読み込み
 (async()=>{
   try{
-    const rows=await loadFromGAS();
+    const rows = await loadFromGAS();
     buildMap(rows);
-    updateSheetStatus(true,`${master.length}件のデータで照合可能`);
+    const total = [...masterMap.values()].reduce((s,v)=>s+v.size,0);
+    updateSheetStatus(true, `${total}件のデータで照合可能`);
     document.getElementById('card-info').style.display='block';
     document.getElementById('data-info').innerHTML=`
-      <div class="ir"><span class="ik">件数</span><span class="iv">${master.length}件</span></div>
+      <div class="ir"><span class="ik">件数</span><span class="iv">${total}件</span></div>
       <div class="ir"><span class="ik">最終更新</span><span class="iv">${new Date().toLocaleString('ja-JP')}</span></div>`;
-    document.getElementById('connect-status').innerHTML=`<div style="color:var(--ok);font-size:13px;font-weight:600">✅ ${master.length}件読み込みました</div>`;
+    document.getElementById('connect-status').innerHTML=`<div style="color:var(--ok);font-size:13px;font-weight:600">✅ ${total}件読み込みました</div>`;
   }catch(e){
     updateSheetStatus(false,'データ未読み込み — 設定タブで再読み込みしてください');
   }
