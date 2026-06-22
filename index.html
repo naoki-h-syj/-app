@@ -310,9 +310,26 @@ function showPage(name){
 // ===========================
 async function startCamera(){
   try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
-    });
+    // 高解像度＋連続オートフォーカスで読み取り精度向上
+    const constraints = {
+      video:{
+        facingMode:{ideal:'environment'},
+        width:{ideal:1920},
+        height:{ideal:1080},
+        focusMode:'continuous',
+        advanced:[{focusMode:'continuous'}]
+      }
+    };
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    // カメラトラックに直接フォーカス設定を適用（対応機種のみ）
+    const track = stream.getVideoTracks()[0];
+    if(track && track.applyConstraints){
+      try{
+        await track.applyConstraints({advanced:[{focusMode:'continuous'}]});
+      }catch(e){}
+    }
+
     const vid = document.getElementById('scan-video');
     vid.srcObject = stream;
     await new Promise(r=>{vid.readyState>=2?r():vid.addEventListener('canplay',r,{once:true})});
@@ -345,14 +362,25 @@ function startQuagga(){
   const vid = document.getElementById('scan-video');
   Quagga.init({
     inputStream:{
-      type:'LiveStream', target:vid,
+      type:'LiveStream',
+      target:vid,
       constraints:{facingMode:'environment'},
-      area:{top:'15%',right:'5%',bottom:'15%',left:'5%'},
+      area:{top:'20%',right:'3%',bottom:'20%',left:'3%'}, // 中央帯のみ解析
     },
-    decoder:{readers:['codabar_reader','code_128_reader'],multiple:false},
-    locate:false, numOfWorkers:0, frequency:20,
+    decoder:{
+      readers:['codabar_reader','code_128_reader'], // NW7=codabar、最小限に絞る
+      multiple:false,
+      debug:{showCanvas:false,showPatches:false,showFoundPatches:false,showSkeleton:false,showLabels:false,showPatchLabels:false,showRemainingPatchLabels:false}
+    },
+    locator:{
+      patchSize:'large',    // NW7の太めバーに最適
+      halfSample:false,     // 精度優先（速度より精度を取る）
+    },
+    locate:true,            // locateをtrueにして自動検出精度向上
+    numOfWorkers:0,         // iOS非対応のため0
+    frequency:25,           // 毎秒25フレーム
   }, err=>{
-    if(err) return;
+    if(err){ console.warn('Quagga:', err); return; }
     Quagga.start();
     quaggaRunning=true;
   });
@@ -364,31 +392,57 @@ function startQuagga(){
 }
 
 // ===========================
-// jsQR — 受注番号QR
+// QRスキャン — BarcodeDetector優先、jsQRフォールバック
 // ===========================
+let nativeBD = null; // BarcodeDetector インスタンス
+
+async function initBarcodeDetector(){
+  if(!('BarcodeDetector' in window)) return false;
+  try{
+    const supported = await BarcodeDetector.getSupportedFormats();
+    const formats = supported.filter(f=>['qr_code','data_matrix'].includes(f));
+    if(!formats.length) return false;
+    nativeBD = new BarcodeDetector({formats});
+    return true;
+  }catch(e){ return false; }
+}
+
 function startJsQR(){
   const vid = document.getElementById('scan-video');
   if(!qrCanvas){
     qrCanvas = document.createElement('canvas');
     qrCtx = qrCanvas.getContext('2d',{willReadFrequently:true});
   }
-  const W=640, H=480;
+  // 解析サイズ：QRは800×600で精度と速度のバランスを取る
+  const W=800, H=600;
   qrCanvas.width=W; qrCanvas.height=H;
+
   let lastMs=0;
-  function loop(ts){
+  async function loop(ts){
     if(step!=='qr') return;
-    if(ts-lastMs>33){
+    if(ts-lastMs>25){ // 約40fps上限
       lastMs=ts;
       if(vid.readyState>=2){
-        qrCtx.drawImage(vid,0,0,W,H);
-        const img=qrCtx.getImageData(0,0,W,H);
-        const result=jsQR(img.data,W,H,{inversionAttempts:'dontInvert'});
-        if(result) onScanQR(result.data);
+        if(nativeBD){
+          // BarcodeDetector（ネイティブ）— 最速
+          try{
+            const results = await nativeBD.detect(vid);
+            for(const r of results){
+              if(r.rawValue){ onScanQR(r.rawValue); return; }
+            }
+          }catch(e){}
+        } else {
+          // jsQR フォールバック
+          qrCtx.drawImage(vid,0,0,W,H);
+          const img = qrCtx.getImageData(0,0,W,H);
+          const result = jsQR(img.data,W,H,{inversionAttempts:'dontInvert'});
+          if(result) onScanQR(result.data);
+        }
       }
     }
-    qrRaf=requestAnimationFrame(loop);
+    qrRaf = requestAnimationFrame(loop);
   }
-  qrRaf=requestAnimationFrame(loop);
+  qrRaf = requestAnimationFrame(loop);
 }
 
 // ===========================
@@ -695,8 +749,8 @@ document.getElementById('btn-clear').addEventListener('click', ()=>{
   }
 })();
 
-// カメラ起動
-startCamera();
+// BarcodeDetector初期化してからカメラ起動
+initBarcodeDetector().then(()=>startCamera());
 </script>
 </body>
 </html>
